@@ -15,4 +15,9 @@ public class IArticleClientFallback implements IArticleClient {
     public ResponseResult saveArticle(ArticleDto dto) {
         return ResponseResult.errorResult(AppHttpCodeEnum.SERVER_ERROR,"服务调用失败");
     }
+
+    @Override
+    public ResponseResult getApArticleConfigByArticleId(Long articleId) {
+        return ResponseResult.errorResult(AppHttpCodeEnum.SERVER_ERROR,"服务调用失败");
+    }
 }
