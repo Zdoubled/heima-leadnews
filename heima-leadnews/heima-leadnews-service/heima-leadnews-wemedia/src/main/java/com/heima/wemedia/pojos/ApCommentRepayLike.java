@@ -1,4 +1,4 @@
-package com.heima.comment.pojos;
+package com.heima.wemedia.pojos;
 
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;

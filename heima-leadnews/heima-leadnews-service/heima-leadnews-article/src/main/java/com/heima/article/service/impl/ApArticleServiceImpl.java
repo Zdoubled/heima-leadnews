@@ -14,6 +14,8 @@ import com.heima.common.redis.CacheService;
 import com.heima.model.article.dtos.ArticleDto;
 import com.heima.model.article.dtos.ArticleHomeDto;
 import com.heima.model.article.dtos.ArticleInfoDto;
+import com.heima.model.article.vos.ArticleCommentVO;
+import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.mess.ArticleVisitStreamMess;
 import com.heima.model.article.pojos.ApArticle;
 import com.heima.model.article.pojos.ApArticleConfig;
@@ -22,6 +24,7 @@ import com.heima.model.article.vos.HotArticleVO;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
 import com.heima.model.user.pojos.ApUser;
+import com.heima.model.wemedia.dtos.ArticleCommentDto;
 import com.heima.utils.thread.AppThreadLocalUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
@@ -213,6 +216,26 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
         //4.替换推荐的热点数据
         replaceDataToRedis(apArticle, score, ArticleConstants.HOT_ARTICLE_FIRST_PAGE + ArticleConstants.DEFAULT_TAG);
     }
+
+    /**
+     * 查询文章列表
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult findNewsComments(ArticleCommentDto dto) {
+        Integer currentPage = dto.getPage();
+        dto.setPage((dto.getPage()-1)*dto.getSize());
+        List<ArticleCommentVO> list = apArticleMapper.findNewsComments(dto);
+
+        int count = apArticleMapper.findNewsCommentsCount(dto);
+        log.info("查询文章评论条数:{}",count);
+
+        PageResponseResult responseResult = new PageResponseResult(currentPage,dto.getSize(),count);
+        responseResult.setData(list);
+        return responseResult;
+    }
+
     /**
      * 替换数据并且存入到redis
      * @param apArticle

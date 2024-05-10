@@ -7,6 +7,7 @@ import com.heima.model.article.dtos.ArticleInfoDto;
 import com.heima.model.mess.ArticleVisitStreamMess;
 import com.heima.model.article.pojos.ApArticle;
 import com.heima.model.common.dtos.ResponseResult;
+import com.heima.model.wemedia.dtos.ArticleCommentDto;
 
 public interface ApArticleService extends IService<ApArticle> {
 
@@ -45,4 +46,11 @@ public interface ApArticleService extends IService<ApArticle> {
      * @param mess
      */
     public void updateScore(ArticleVisitStreamMess mess);
+
+    /**
+     * 查看评论列表
+     * @param dto
+     * @return
+     */
+    ResponseResult findNewsComments(ArticleCommentDto dto);
 }

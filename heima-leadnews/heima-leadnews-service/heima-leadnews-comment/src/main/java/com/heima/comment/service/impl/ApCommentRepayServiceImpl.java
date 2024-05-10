@@ -7,6 +7,7 @@ import com.heima.comment.pojos.ApCommentRepay;
 import com.heima.comment.pojos.ApCommentRepayLike;
 import com.heima.comment.service.ApCommentRepayService;
 import com.heima.model.comment.dtos.CommentRepayDto;
+import com.heima.model.comment.dtos.CommentRepayLikeDto;
 import com.heima.model.comment.dtos.CommentRepaySaveDto;
 import com.heima.model.comment.vos.ApCommentRepayVO;
 import com.heima.model.common.dtos.ResponseResult;
@@ -22,7 +23,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,22 +57,22 @@ public class ApCommentRepayServiceImpl implements ApCommentRepayService {
             return ResponseResult.errorResult(AppHttpCodeEnum.NEED_LOGIN);
         }
         //3.数据补全
+        ResponseResult result = apUserClient.getById(user.getId());
+        if (!result.getCode().equals(200) || null == result.getData()){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID,"用户不存在");
+        }
+        //用户昵称
+        String apUserStr = JSON.toJSONString(result.getData());
+        ApUser apUser = JSON.parseObject(apUserStr, ApUser.class);
         ApCommentRepay apCommentRepay = new ApCommentRepay();
+        apCommentRepay.setAuthorName(apUser.getName());
         //用户id
         apCommentRepay.setAuthorId(user.getId());
         apCommentRepay.setCommentId(dto.getCommentId());
-        //用户昵称
-        ResponseResult result = apUserClient.getById(user.getId());
-        if (!result.getCode().equals(200) || null == result.getData()){
-            return ResponseResult.errorResult(AppHttpCodeEnum.NEED_LOGIN);
-        }
-        String apUserStr = JSON.toJSONString(result.getData());
-        ApUser apUser = JSON.parseObject(apUserStr, ApUser.class);
-        apCommentRepay.setAuthorName(apUser.getName());
         //评论内容
         apCommentRepay.setContent(dto.getContent());
-        //创建时间
         Date date = new Date();
+        //创建时间
         apCommentRepay.setCreatedTime(date);
         //更新时间
         apCommentRepay.setUpdatedTime(date);
@@ -77,7 +81,7 @@ public class ApCommentRepayServiceImpl implements ApCommentRepayService {
         mongoTemplate.save(apCommentRepay);
         //5.评论回复数 +1
         ApComment apComment = mongoTemplate.findById(dto.getCommentId(), ApComment.class);
-        apComment.setReply(apComment.getReply() == null ? 1 : apComment.getReply() + 1);
+        apComment.setReply(apComment.getReply() + 1);
         mongoTemplate.save(apComment);
         return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }
@@ -88,6 +92,8 @@ public class ApCommentRepayServiceImpl implements ApCommentRepayService {
         if (null == dto || null == dto.getCommentId()) {
             return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
         }
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        log.info("查询评论最小时间参数为:{}", format.format(dto.getMinDate()));
         //2.条件查询
         if (dto.getSize() == null || dto.getSize() == 0){
             dto.setSize(10);
@@ -117,5 +123,42 @@ public class ApCommentRepayServiceImpl implements ApCommentRepayService {
         });
         //4.封装返回
         return ResponseResult.okResult(apCommentRepayVOS);
+    }
+
+    @Override
+    public ResponseResult like(CommentRepayLikeDto dto) {
+        //1.参数校验
+        if (null == dto || null == dto.getCommentRepayId() || null == dto.getOperation() || dto.getOperation() > 1 || dto.getOperation() < 0) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+        //2.判断是否登录
+        ApUser user = AppThreadLocalUtil.getUser();
+        if (null == user){
+            return ResponseResult.errorResult(AppHttpCodeEnum.NEED_LOGIN);
+        }
+        //3.点赞操作，并新增点赞数
+        ApCommentRepay one = mongoTemplate.findById(dto.getCommentRepayId(), ApCommentRepay.class);
+        if (dto.getOperation() == 0){
+            //新增点赞
+            ApCommentRepayLike apCommentRepayLike = new ApCommentRepayLike();
+            apCommentRepayLike.setCommentRepayId(dto.getCommentRepayId());
+            apCommentRepayLike.setAuthorId(user.getId());
+            mongoTemplate.save(apCommentRepayLike);
+            //点赞数 +1
+            one.setLikes(one.getLikes() + 1);
+            mongoTemplate.save(one);
+        }else {
+            //取消点赞
+            Query query = Query.query(Criteria.where("commentRepayId").is(dto.getCommentRepayId()).and("authorId").is(user.getId()));
+            mongoTemplate.remove(query, ApCommentRepayLike.class);
+            //点赞数 -1
+            int count = one.getLikes() - 1;
+            count = count < 1 ? 0 : count;
+            one.setLikes(count);
+            mongoTemplate.save(one);
+        }
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("likes", one.getLikes());
+        return ResponseResult.okResult(result);
     }
 }

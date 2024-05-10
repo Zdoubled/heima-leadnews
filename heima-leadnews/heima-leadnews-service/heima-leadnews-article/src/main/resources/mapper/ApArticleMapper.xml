@@ -62,5 +62,36 @@
             </if>
         </where>
     </select>
+    <select id="findNewsComments" parameterType="com.heima.model.wemedia.dtos.ArticleCommentDto"
+            resultType="com.heima.model.article.vos.ArticleCommentVO">
+        SELECT aa.id, aa.title, aa.comment comments, aac.is_comment isComment,aa.publish_time publishTime
+        FROM ap_article aa,
+        ap_article_config aac
+        WHERE aa.id = aac.article_id
+        AND aa.author_id = #{dto.wmUserId}
+        <if test="dto.beginDate != null">
+            AND aa.publish_time <![CDATA[>=]]> #{dto.beginDate}
+        </if>
+        <if test="dto.endDate != null">
+            AND aa.publish_time <![CDATA[<]]> #{dto.endDate}
+        </if>
+        order by aa.publish_time desc
+        limit #{dto.page},#{dto.size}
+    </select>
+
+    <select id="findNewsCommentsCount" parameterType="com.heima.model.wemedia.dtos.ArticleCommentDto" resultType="int">
+        SELECT
+        count(1)
+        FROM
+        `ap_article` aa , `ap_article_config` aac
+        WHERE aa.id = aac.article_id
+        AND aa.author_id = #{dto.wmUserId}
+        <if test="dto.beginDate != null">
+            AND aa.publish_time <![CDATA[>=]]> #{dto.beginDate}
+        </if>
+        <if test="dto.endDate != null">
+            AND aa.publish_time <![CDATA[<]]> #{dto.endDate}
+        </if>
+    </select>
 
 </mapper>

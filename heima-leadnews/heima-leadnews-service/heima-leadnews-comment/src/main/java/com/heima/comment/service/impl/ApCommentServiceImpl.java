@@ -47,11 +47,11 @@ public class ApCommentServiceImpl implements ApCommentService {
         //2.判断
         //判断文章是否开启评论
         if (checkAble(dto.getArticleId())){
-            return ResponseResult.errorResult(403, "文章未开启评论");
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID, "文章未开启评论");
         }
         //判断评论是否超过140字
         if (dto.getContent().length() > 140){
-            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID,"内容过长");
         }
         //TODO 判断内容是否违规
 
