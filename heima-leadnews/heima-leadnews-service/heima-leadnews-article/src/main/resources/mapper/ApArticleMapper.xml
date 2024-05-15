@@ -94,4 +94,23 @@
         </if>
     </select>
 
+    <resultMap id="resultMap2" type="java.util.Map">
+        <result column="likes" property="likes"/>
+        <result column="collections" property="collections"/>
+        <result column="newsCount" property="newsCount"/>
+    </resultMap>
+
+    <select id="queryByDateAndId" resultMap="resultMap2">
+        SELECT sum(aa.likes) as "likes",
+               sum(aa.collection) as "collections",
+               count(aa.id) as "newsCount"
+        FROM ap_article aa,
+             ap_article_config aac
+        WHERE aa.id = aac.article_id
+          AND aac.is_delete != 1
+          AND aac.is_down != 1
+          AND aa.author_id = #{id}
+          AND aa.publish_time <![CDATA[>=]]> #{beginDate}
+          AND aa.publish_time <![CDATA[<]]> #{endDate}
+    </select>
 </mapper>

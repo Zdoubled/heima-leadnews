@@ -1,7 +1,9 @@
 package com.heima.article.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heima.article.mapper.ApArticleConfigMapper;
 import com.heima.article.mapper.ApArticleContentMapper;
@@ -15,6 +17,7 @@ import com.heima.model.article.dtos.ArticleDto;
 import com.heima.model.article.dtos.ArticleHomeDto;
 import com.heima.model.article.dtos.ArticleInfoDto;
 import com.heima.model.article.vos.ArticleCommentVO;
+import com.heima.model.article.vos.ArticleStatisticsVO;
 import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.mess.ArticleVisitStreamMess;
 import com.heima.model.article.pojos.ApArticle;
@@ -25,7 +28,10 @@ import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
 import com.heima.model.user.pojos.ApUser;
 import com.heima.model.wemedia.dtos.ArticleCommentDto;
+import com.heima.model.wemedia.dtos.StatisticsDto;
+import com.heima.utils.common.DateUtils;
 import com.heima.utils.thread.AppThreadLocalUtil;
+import com.heima.utils.thread.WmThreadLocalUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -33,10 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -234,6 +237,33 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
         PageResponseResult responseResult = new PageResponseResult(currentPage,dto.getSize(),count);
         responseResult.setData(list);
         return responseResult;
+    }
+
+    @Override
+    public ResponseResult queryLikesAndCollections(Integer wmUserId, Date beginDate, Date endDate) {
+        //2.查询
+        Map<String,Object> map = apArticleMapper.queryByDateAndId(beginDate, endDate,wmUserId);
+        map.forEach((s, o) -> log.info("key:{},value:{}",s,o));
+        return ResponseResult.okResult(map);
+    }
+
+    @Override
+    public ResponseResult findNewPage(StatisticsDto dto) {
+        //1.类型转化
+        Date beginDate = DateUtils.stringToDate(dto.getBeginDate());
+        Date endDate = DateUtils.stringToDate(dto.getEndDate());
+        log.info("beginDate:{},endDate:{}",beginDate,endDate);
+        //2.分页查询
+        IPage<ApArticle> page = new Page<>(dto.getPage(),dto.getSize());
+        page = apArticleMapper.selectPage(page,Wrappers.<ApArticle>lambdaQuery().eq(ApArticle::getAuthorId, dto.getWmUserId()).ge(ApArticle::getPublishTime, beginDate).le(ApArticle::getPublishTime, endDate).orderByDesc(ApArticle::getPublishTime));
+        PageResponseResult result = new PageResponseResult(dto.getPage(), dto.getSize(), (int) page.getTotal());
+        List<ArticleStatisticsVO> list = page.getRecords().stream().map(apArticle -> {
+            ArticleStatisticsVO statisticsVO = new ArticleStatisticsVO();
+            BeanUtils.copyProperties(apArticle, statisticsVO);
+            return statisticsVO;
+        }).collect(Collectors.toList());
+        result.setData(list);
+        return result;
     }
 
     /**

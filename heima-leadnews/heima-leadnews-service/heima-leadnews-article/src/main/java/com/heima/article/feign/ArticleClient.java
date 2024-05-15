@@ -10,8 +10,11 @@ import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
 import com.heima.model.wemedia.dtos.ArticleCommentDto;
 import com.heima.model.wemedia.dtos.ArticleCommentStatusDto;
+import com.heima.model.wemedia.dtos.StatisticsDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
 
 @RestController
 public class ArticleClient implements IArticleClient {
@@ -43,6 +46,18 @@ public class ArticleClient implements IArticleClient {
     @PostMapping("/api/v1/article/find_news_comments")
     public ResponseResult findNewsComments(@RequestBody ArticleCommentDto dto) {
         return apArticleService.findNewsComments(dto);
+    }
+
+    @Override
+    @GetMapping("/api/v1/article/query_likes_and_collections")
+    public ResponseResult queryLikesAndCollections(@RequestParam("wmUserId") Integer wmUserId,@RequestParam("beginDate")Date beginDate,@RequestParam("endDate")Date endDate) {
+        return apArticleService.queryLikesAndCollections(wmUserId,beginDate,endDate);
+    }
+
+    @Override
+    @PostMapping("/api/v1/article/find_new_page")
+    public ResponseResult findNewPage(@RequestBody StatisticsDto dto) {
+        return apArticleService.findNewPage(dto);
     }
 
 

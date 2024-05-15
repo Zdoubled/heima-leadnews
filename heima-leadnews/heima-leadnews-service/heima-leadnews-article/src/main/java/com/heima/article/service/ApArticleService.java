@@ -8,6 +8,9 @@ import com.heima.model.mess.ArticleVisitStreamMess;
 import com.heima.model.article.pojos.ApArticle;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.wemedia.dtos.ArticleCommentDto;
+import com.heima.model.wemedia.dtos.StatisticsDto;
+
+import java.util.Date;
 
 public interface ApArticleService extends IService<ApArticle> {
 
@@ -53,4 +56,20 @@ public interface ApArticleService extends IService<ApArticle> {
      * @return
      */
     ResponseResult findNewsComments(ArticleCommentDto dto);
+
+    /**
+     * 点赞收藏统计
+     * @param wmUserId
+     * @param beginDate
+     * @param endDate
+     * @return
+     */
+    ResponseResult queryLikesAndCollections(Integer wmUserId,Date beginDate, Date endDate);
+
+    /**
+     * 分页展示文章列表，展示当前时间范围内的具体文章阅读、评论、收藏的数量。
+     * @param dto
+     * @return
+     */
+    ResponseResult findNewPage(StatisticsDto dto);
 }
